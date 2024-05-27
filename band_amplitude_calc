@@ -1,0 +1,44 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.fft import fft, fftfreq
+
+# 计算出（6-10Hz）和（18-25Hz）两个部分 对应的amp总和，分别代表眨眼和咀嚼
+def band_amplitude_calc(data, fs, band_ranges):
+    ######################### fft部分重复，可模块化
+    # 计算信号的FFT
+    data_fft = fft(data)
+    # 计算频率轴
+    freqs = fftfreq(len(data), 1/fs)
+    
+    # 仅保留单边频谱
+    data_fft = data_fft[:len(data_fft)//2]
+    freqs = freqs[:len(freqs)//2]
+    ###########################
+    
+    # 计算每个频段的总幅度
+    band_amplitudes = {}
+    for band_name, (low, high) in band_ranges.items():
+        band_mask = (freqs >= low) & (freqs <= high) # Bool type 
+        band_amplitudes[band_name] = np.sum(2 * np.abs(data_fft[band_mask]))
+    
+    return band_amplitudes
+
+
+# 定义频段范围
+band_ranges = {
+    'blink': (6, 10),   # 眨眼
+    'chewing': (18, 25)  # 咀嚼
+}
+
+
+# 示例使用
+fs = 1000  # 采样频率
+t = np.arange(0, 1, 1/fs)  # 时间轴
+data = np.sin(2*np.pi*50*t) + 0.5*np.sin(2*np.pi*80*t)  # 生成信号数据
+
+# 计算频段的总幅度
+band_amplitudes = calculate_band_amplitude(data, fs, band_ranges)
+
+# 输出结果 可替换为比值
+print(f"Total amplitude in 6-10 Hz (blink) band: {band_amplitudes['blink']}")
+print(f"Total amplitude in 18-25 Hz (chewing) band: {band_amplitudes['chewing']}")
