@@ -1,0 +1,33 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.fft import fft, fftfreq
+
+# function "plot_fft" as verification after filter
+def fft_plot(data, fs):
+    # 计算信号的FFT
+    data_fft = fft(data)
+    # 计算频率轴
+    freqs = fftfreq(len(data), 1/fs)
+    
+    # 仅保留单边频谱
+    data_fft = data_fft[:len(data_fft)//2]
+    freqs = freqs[:len(freqs)//2]
+    
+    # 绘制单边FFT的幅度谱
+    plt.figure(figsize=(10, 6))
+    plt.plot(freqs, 2 * np.abs(data_fft))
+    plt.title('One-sided FFT of Signal')
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('Magnitude')
+    plt.grid(True)
+    plt.show()
+
+
+
+# 示例使用
+fs = 1000  # 采样频率
+t = np.arange(0, 1, 1/fs)  # 时间轴
+data = np.sin(2*np.pi*50*t) + 0.5*np.sin(2*np.pi*80*t)  # 生成信号数据
+
+# 绘制信号的单边FFT
+fft_plot(data, fs)
