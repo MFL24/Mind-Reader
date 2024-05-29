@@ -1,0 +1,63 @@
+from pylsl import StreamInlet, resolve_stream
+import time
+import numpy as np
+import matplotlib.pyplot as plt
+import multiprocessing as mp
+import time
+from scipy.signal import cheb2ord, cheby2, filtfilt
+#from get_data import get_Data
+#from process_data import process_data
+
+def get_Data(queue):
+    # set window parameters
+    nSamples_Window = 128
+    step = 64
+    
+    # start streaming 
+    print("Looking for an LSL stream...")
+    try: 
+        streams = resolve_stream('type', 'EEG')
+        inlet = StreamInlet(streams[0])
+        print("Connected to stream. Now receiving data...")
+    except:
+        raise ValueError('No Stream founded')
+
+    # initialize arrays
+    timestamp = np.zeros(nSamples_Window)
+    sample = np.zeros((15,nSamples_Window))
+    # initialize count variable for number of generated windows
+    count = 0
+    # Acquiring data stream from OpenVIBE
+    while True:
+        # Get channel data at certain timestamp
+        sample_tempt, timestamp_tempt= inlet.pull_sample()
+        # check if window is fully acquired
+        if i%step== 0 and i!=0 and i!=step:
+            count += 1 # a window is generated
+            queue.put((timestamp,sample)) # put window data into queue
+            sample = np.roll(sample,-step,axis=1) # shift the window for overlapping
+        # write stream data
+        sample[:,i-step*count]=sample_tempt
+
+# set filter parameters
+fs = 128  # 采样率
+band_ranges = {
+    'blink': (6, 10),
+    'chew': (18, 25)
+}
+filter_params = ([5, 27], [4, 28])  # 示例滤波器参数
+
+# create 2 queues for data transfer, queue is shared between processes.
+queue_raw = mp.Queue()
+queue_filter = mp.Queue()
+
+# create 3 processes
+process_getData = mp.Process(target = get_Data, args=(queue_raw,))
+# process_processData = mp.Process(target = process_data, args=(queue_raw,queue_filter,fs, filter_params,band_ranges,))
+
+
+process_getData.start()
+# process_processData.start()
+
+process_getData.join()
+# process_processData.join()
