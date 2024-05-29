@@ -27,6 +27,7 @@ def get_Data(queue):
     sample = np.zeros((15,nSamples_Window))
     # initialize count variable for number of generated windows
     count = 0
+    i = 0
     # Acquiring data stream from OpenVIBE
     while True:
         # Get channel data at certain timestamp
@@ -38,7 +39,7 @@ def get_Data(queue):
             sample = np.roll(sample,-step,axis=1) # shift the window for overlapping
         # write stream data
         sample[:,i-step*count]=sample_tempt
-
+        i += 1
 # set filter parameters
 fs = 128  # 采样率
 band_ranges = {
@@ -51,13 +52,15 @@ filter_params = ([5, 27], [4, 28])  # 示例滤波器参数
 queue_raw = mp.Queue()
 queue_filter = mp.Queue()
 
-# create 3 processes
-process_getData = mp.Process(target = get_Data, args=(queue_raw,))
-# process_processData = mp.Process(target = process_data, args=(queue_raw,queue_filter,fs, filter_params,band_ranges,))
 
+if '__name__' == '__main__':
+    print('haha')
+    # create 3 processes
+    process_getData = mp.Process(target = get_Data, args=(queue_raw,))
+    # process_processData = mp.Process(target = process_data, args=(queue_raw,queue_filter,fs, filter_params,band_ranges,))
 
-process_getData.start()
-# process_processData.start()
+    process_getData.start()
+    # process_processData.start()
 
-process_getData.join()
-# process_processData.join()
+    process_getData.join()
+    # process_processData.join()

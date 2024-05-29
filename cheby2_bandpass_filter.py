@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import cheb2ord, cheby2, filtfilt
+from scipy.signal import cheb2ord, cheby2, filtfilt, freqz
 
 def cheby2_bandpass_filter(data, wp, ws, gpass=3, gstop=60, rs=60, btype='bandpass', fs = 1000):
     wp = [wp[0] / (fs / 2), wp[1] / (fs / 2)]
@@ -8,7 +8,15 @@ def cheby2_bandpass_filter(data, wp, ws, gpass=3, gstop=60, rs=60, btype='bandpa
     N, Wn = cheb2ord(wp, ws, gpass, gstop)  # 计算order和归一化截止频率
     b, a = cheby2(N, rs, Wn, btype)  # 设计Chebyshev II滤波器
     data_preprocessed = filtfilt(b, a, data)  # 使用滤波器对数据进行滤波
+    w, h = freqz(b,a,fs=fs)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(w,20*np.log10(abs(h)))
     return data_preprocessed
+
+
+
+
 
 # 生成信号数据 替换为 实时采集的数据
 fs = 1000  # 采样频率为 1000 Hz
@@ -28,3 +36,6 @@ plt.title('Original and Filtered Signals')
 plt.legend()
 plt.grid(True)
 plt.show()
+
+
+
