@@ -2,6 +2,8 @@
 # coding: utf-8
 
 # In[3]:
+from pylsl import StreamInlet, resolve_stream
+import numpy as np
 
 
 def get_Data(queue):
@@ -20,7 +22,7 @@ def get_Data(queue):
 
     # initialize arrays
     timestamp = np.zeros(nSamples_Window)
-    sample = np.zeros((15,nSamples_Window))
+    sample = np.zeros((14,nSamples_Window))
     # initialize count variable for number of generated windows
     count = 0
     i = 0
@@ -33,9 +35,9 @@ def get_Data(queue):
             count += 1 # a window is generated
             queue.put((timestamp,sample)) # put window data into queue
             sample = np.roll(sample,-step,axis=1) # shift the window for overlapping
-            timestamp = np.roll(timestamp,-step,axis=1) # shift the time vector for overlapping
-        # write stream data
-        sample[:,i-step*count]=sample_tempt
-        timestamp[:,i-step*count]=timestamp_tempt
+            timestamp = np.roll(timestamp,-step) # shift the time vector for overlapping
+        # write stream data (last entry of sample_tempt discarded)
+        sample[:,i-step*count]=sample_tempt[:-1]
+        timestamp[i-step*count]=timestamp_tempt
         i += 1
 
