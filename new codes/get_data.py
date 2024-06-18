@@ -8,8 +8,8 @@ import numpy as np
 
 def get_Data(queue):
     # set window parameters
-    nSamples_Window = 128
-    step = 64
+    nSamples_Window = 128*2
+    step = 100*2
     
     # start streaming 
     print("Looking for an LSL stream...")
@@ -31,7 +31,7 @@ def get_Data(queue):
         # Get channel data at certain timestamp
         sample_tempt, timestamp_tempt= inlet.pull_sample()
         # check if window is fully acquired
-        if i%step== 0 and i!=0 and i!=step:
+        if (i-nSamples_Window)%step== 0 and i!=0 and i!=step:
             count += 1 # a window is generated
             queue.put((timestamp,sample)) # put window data into queue
             sample = np.roll(sample,-step,axis=1) # shift the window for overlapping
