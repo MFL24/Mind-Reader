@@ -61,7 +61,7 @@ if __name__ == '__main__':
             if figure_rect.colliderect(wall):
                 print(id(old_position_fig),id(position_fig))
                 print('old: {}; new: {}'.format(old_position_fig,position_fig))
-                position_fig = old_position_fig
+                position_fig = old_position_fig.copy()
                 
             window.blit(figure,position_fig)
 
