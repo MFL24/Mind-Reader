@@ -4,6 +4,8 @@ from scipy.fftpack import fft, fftfreq
 import find_channel_index
 
 
-a = {'a':1,'b':2}
-for i in a.keys():
-    print(i)
+a = 1
+b = a
+
+# a = 2
+print(id(a),id(b))

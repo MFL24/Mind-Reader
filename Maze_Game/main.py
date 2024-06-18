@@ -1,48 +1,71 @@
 import numpy as np
 import pygame
-
+import time
 
 
 if __name__ == '__main__':
-    pygame.init() 
-    
-    # CREATING CANVAS 
-    canvas = pygame.display.set_mode((500, 500)) 
+    # initalize
+    pygame.init()
 
-    color = (255,255,255) 
-    rect_color = (255,0,0) 
+    # Create a window
+    window_size = (800, 600) # set window size
+    window = pygame.display.set_mode(window_size)
+    pygame.display.set_caption("Maze Game")
 
-    rect_holder = pygame.Rect(50,50,60,60)
-    # TITLE OF CANVAS 
-    pygame.display.set_caption("Show Image") 
+    # Load an image into a surface
+    figure = pygame.image.load('./Maze_Game/test.png') # load test figure image
+    figure = pygame.transform.scale(figure,(30,50)) # scale the figure to smaller size
+    figure_rect = figure.get_rect() # obtain the rect object of the figure
     
-    img = pygame.image.load('./Maze_Game/test.png')
-    print(type(img))
+    # Set initial position of figure
+    position_fig = [100, 100]
     
-    exit = False
+    # Set initial position of walls
+    position_wall = [200,200]
     
-    while not exit: 
-        canvas.fill(color) 
-        
-        for event in pygame.event.get(): 
-            # print(event)
-            if event.type == pygame.QUIT: 
-                exit = True
-            elif event.type == 771:
+    wall = pygame.Rect([200,200,50,50])
+    
+    # redefine the position of rectangle for collision detection
+    figure_rect.x = position_fig[0]
+    figure_rect.y = position_fig[1]
+    
+    # Define movement speed
+    speed = 10
+
+    # Main loop
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            
+            if event.type == 771: # 771 is the alphabet
+                old_position_fig = position_fig.copy()
                 if event.text == 'a':
-                    print('a pressed')
-                    rect_holder = rect_holder.move(-10,0)
-                    canvas.scroll(-10,0)
+                    position_fig[0] -= speed 
+                    figure_rect.x -= speed                   
                 elif event.text == 'd':
-                    print('d pressed')
-                    rect_holder = rect_holder.move(10,0)
+                    position_fig[0] += speed  
+                    figure_rect.x += speed   
                 elif event.text == 'w':
-                    print('w pressed')
-                    rect_holder = rect_holder.move(0,-10)
+                    position_fig[1] -= speed 
+                    figure_rect.y -= speed   
                 elif event.text == 's':
-                    print('s pressed')
-                    rect_holder = rect_holder.move(0,10) 
-                    
-        canvas.blit(img,(0,0)) 
-        pygame.draw.rect(canvas, rect_color, rect_holder) 
-        pygame.display.update() 
+                    position_fig[1] += speed 
+                    figure_rect.y += speed   
+
+            # Clear the window
+            window.fill((255, 255, 255))  # Fill with white color
+
+            # Blit the surface at the updated position
+            if figure_rect.colliderect(wall):
+                print(id(old_position_fig),id(position_fig))
+                print('old: {}; new: {}'.format(old_position_fig,position_fig))
+                position_fig = old_position_fig
+                
+            window.blit(figure,position_fig)
+
+            pygame.draw.rect(window, (0,0,0), wall)
+            # Update the display
+            pygame.display.flip()
+            # pygame.time.wait(1000)
