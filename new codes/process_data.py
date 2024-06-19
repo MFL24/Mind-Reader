@@ -23,6 +23,23 @@ def cheby2_bandpass_filter(data, fs, wp, ws, gpass=3, gstop=40, rs=60, btype='ba
     data_preprocessed = filtfilt(b, a, data)  # 使用滤波器对数据进行滤波
     return data_preprocessed
 
+def cheby2_lowpass_filter(data, fs, wp, ws, gpass=3, gstop=40, rs=60, btype='lowpass'):
+    wp = wp / (fs / 2)
+    ws = ws / (fs / 2)
+    N, Wn = cheb2ord(wp, ws, gpass, gstop)  # 计算order和归一化截止频率
+    b, a = cheby2(N, rs, Wn, btype)  # 设计Chebyshev II滤波器
+    data_preprocessed = filtfilt(b, a, data)  # 使用滤波器对数据进行滤波
+    return data_preprocessed
+
+def cheby2_highpass_filter(data, fs, wp, ws, gpass=3, gstop=40, rs=60, btype='highpass'):
+    wp = wp / (fs / 2)
+    ws = ws / (fs / 2)
+    N, Wn = cheb2ord(wp, ws, gpass, gstop)  # 计算order和归一化截止频率
+    b, a = cheby2(N, rs, Wn, btype)  # 设计Chebyshev II滤波器
+    data_preprocessed = filtfilt(b, a, data)  # 使用滤波器对数据进行滤波
+    return data_preprocessed
+
+
 def fft_single_channel(data, fs, band_ranges, channel_index):
     sig = data[channel_index,:]
     L = len(sig)
@@ -64,7 +81,11 @@ def band_feature_extraction(data, fs, band_ranges, select_channels):
     return band_amplitudes
 
 def predict_features(data, fs, filter_params, band_ranges, select_channels, thresholds):
-    filtered_data = cheby2_bandpass_filter(data, fs, *filter_params)
+    # filtered_data = cheby2_bandpass_filter(data, fs, *filter_params)
+    lowpass_filter_params = filter_params[1]
+    highpass_filter_params = filter_params[0]
+    filtered_data = cheby2_lowpass_filter(data, fs, *lowpass_filter_params)
+    filtered_data = cheby2_highpass_filter(filtered_data, fs, *highpass_filter_params)
     features = band_feature_extraction(filtered_data, fs, band_ranges,select_channels)
 
     action = 0

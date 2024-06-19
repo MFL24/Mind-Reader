@@ -13,18 +13,21 @@ if __name__ == '__main__':
     # set filter parameters
     fs = 128  # 采样率
     band_ranges = {
-        # 'blink': (8, 13),
-        'blink': (13, 30),
-        'chew': (13, 30)
+        'blink': (1, 13),
+        # 'blink': (13, 30),
+        'chew': (1, 13),
+        # 'chew': (13, 30)
     }
-    filter_params = ([5, 27], [4, 28])  # 示例滤波器参数
+    # filter_params = ([0.8, 27], [0.6, 28])  # 示例滤波器参数
+    filter_params = ([0.8, 0.6], [27, 28])
+    
     channels = {
         'blink' : ('F3','F4'),
         'chew' : ('T7','T8')
     }
     thresholds = {
-        'blink' : 0.1,
-        'chew' : 0.1
+        'blink' : 30,
+        'chew' : 105
     }
 
     # create 2 queues for data transfer, queue is shared between processes.

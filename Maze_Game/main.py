@@ -38,9 +38,9 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            
             if event.type == 771: # 771 is the alphabet
                 old_position_fig = position_fig.copy()
+                old_figure_rect = [figure_rect.x,figure_rect.y]
                 if event.text == 'a':
                     position_fig[0] -= speed 
                     figure_rect.x -= speed                   
@@ -56,12 +56,13 @@ if __name__ == '__main__':
 
             # Clear the window
             window.fill((255, 255, 255))  # Fill with white color
-
+            
             # Blit the surface at the updated position
             if figure_rect.colliderect(wall):
-                print(id(old_position_fig),id(position_fig))
-                print('old: {}; new: {}'.format(old_position_fig,position_fig))
+                print('collide')
                 position_fig = old_position_fig.copy()
+                figure_rect.x = old_figure_rect[0]
+                figure_rect.y = old_figure_rect[1]
                 
             window.blit(figure,position_fig)
 
