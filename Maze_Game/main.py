@@ -1,72 +1,58 @@
 import numpy as np
 import pygame
 import time
+from gadgets import Player,Wall,Flag
+
+
 
 
 if __name__ == '__main__':
     # initalize
     pygame.init()
+    vec = pygame.math.Vector2
 
     # Create a window
     window_size = (800, 600) # set window size
     window = pygame.display.set_mode(window_size)
     pygame.display.set_caption("Maze Game")
+    
+    PlayerInitialPosition = vec(50,500)
+    P1 = Player((50,50),PlayerInitialPosition,window,color=(255,255,0))
+    
 
-    # Load an image into a surface
-    figure = pygame.image.load('./Maze_Game/test.png') # load test figure image
-    figure = pygame.transform.scale(figure,(30,50)) # scale the figure to smaller size
-    figure_rect = figure.get_rect() # obtain the rect object of the figure
-    
-    # Set initial position of figure
-    position_fig = [100, 100]
-    
-    # Set initial position of walls
-    position_wall = [200,200]
-    
-    wall = pygame.Rect([200,200,50,50])
-    
-    # redefine the position of rectangle for collision detection
-    figure_rect.x = position_fig[0]
-    figure_rect.y = position_fig[1]
-    
-    # Define movement speed
-    speed = 10
+    wall_size = ([800,20],[20,800],[20,800],[800,20],
+                 [500,20],[500,20],[500,20])
+    wall_position = ([0,580],[0,0],[780,0],[0,0],
+                      [0,450],[0,100],[300,300])
 
+    F = Flag((30,30),[50,50])
+    
+    Walls = pygame.sprite.Group()
+    Gadgets = pygame.sprite.Group()    
+    Interactive = pygame.sprite.Group()   
+    for i in range(len(wall_position)):
+        w_tempt = Wall(wall_size[i],wall_position[i],(0,0,0))
+        Walls.add(w_tempt)
+        Gadgets.add(w_tempt)
+    Gadgets.add(P1)
+    Gadgets.add(F)
+    Interactive.add(F)
+        
+        
     # Main loop
     running = True
-    while running:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            if event.type == 771: # 771 is the alphabet
-                old_position_fig = position_fig.copy()
-                old_figure_rect = [figure_rect.x,figure_rect.y]
-                if event.text == 'a':
-                    position_fig[0] -= speed 
-                    figure_rect.x -= speed                   
-                elif event.text == 'd':
-                    position_fig[0] += speed  
-                    figure_rect.x += speed   
-                elif event.text == 'w':
-                    position_fig[1] -= speed 
-                    figure_rect.y -= speed   
-                elif event.text == 's':
-                    position_fig[1] += speed 
-                    figure_rect.y += speed   
-
-            # Clear the window
-            window.fill((255, 255, 255))  # Fill with white color
-            
-            # Blit the surface at the updated position
-            if figure_rect.colliderect(wall):
-                print('collide')
-                position_fig = old_position_fig.copy()
-                figure_rect.x = old_figure_rect[0]
-                figure_rect.y = old_figure_rect[1]
-                
-            window.blit(figure,position_fig)
-
-            pygame.draw.rect(window, (0,0,0), wall)
-            # Update the display
-            pygame.display.flip()
-            # pygame.time.wait(1000)
+                pygame.quit()
+        
+        window.fill((255,255,255))
+    
+        last_movement = P1.move()
+        P1.update(last_movement,Walls)
+        P1.win(Interactive,'./Maze_Game/winning.png')
+        
+        for entity in Gadgets:
+            window.blit(entity.surf, entity.rect)
+        
+        pygame.display.update()
