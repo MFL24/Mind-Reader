@@ -10,4 +10,20 @@ for i in range(N):
 
 
 
+# import pyautogui
+# import time
+
+# def press_a_key_every_2_seconds():
+#     try:
+#         while True:
+#             pyautogui.press('a')
+#             time.sleep(1a)
+#     except KeyboardInterrupt:
+#         print("Program terminated by user.")
+
+# if __name__ == "__main__":
+#     press_a_key_every_2_seconds()
+
+
+
 

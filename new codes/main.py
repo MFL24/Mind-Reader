@@ -30,6 +30,10 @@ if __name__ == '__main__':
         'chew' : 105
     }
 
+    # load model
+    # clf = joblib.load("model.pkl")
+    # print(clf.predict(X[0:1]))
+
     # create 2 queues for data transfer, queue is shared between processes.
     queue_raw = mp.Queue()
     queue_plot = mp.Queue()

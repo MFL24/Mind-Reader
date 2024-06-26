@@ -1,3 +1,4 @@
+# get svm model
 from scipy.signal import cheb2ord, cheby2, filtfilt
 import mne
 import numpy as np
@@ -5,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.fftpack import fft, fftfreq
 from sklearn import svm
+import joblib
 
 def cheby2_lowpass_filter(data, fs, wp, ws, gpass=3, gstop=40, rs=60, btype='lowpass'):
     wp = wp / (fs / 2)
@@ -130,11 +132,28 @@ def CSV_to_Dataset(path,event_id):
 
     return (feature_matrix,label_vector)
 
-print(CSV_to_Dataset('./Offline_Test/RightEyeBlink3.csv',2)[0])
+
+# print(CSV_to_Dataset('./Offline_Test/RightEyeBlink3.csv',2)[0])
+
+feature_LeftEyeBlink, label_LeftEyeBlink = CSV_to_Dataset('./Offline_Test/LeftEyeBlink.csv', 1)
+feature_RightEyeBlink, label_RightEyeBlink = CSV_to_Dataset('./Offline_Test/RightEyeBlink.csv', 2)
+feature_Chew, label_Chew = CSV_to_Dataset('./Offline_Test/Chewing.csv', 3)
+# print("Shape of feature_LeftEyeBlink:", feature_LeftEyeBlink.shape)
+# print("Shape of feature_RightEyeBlink:", feature_RightEyeBlink.shape)
+# print("Shape of feature_Chew:", feature_Chew.shape)
+
+features = np.concatenate((feature_LeftEyeBlink, feature_RightEyeBlink, feature_Chew), axis=0)
+# print(features.shape)
+lables = np.concatenate((label_LeftEyeBlink, label_RightEyeBlink, label_Chew), axis = 0)
+# print(lables.shape)
 
 # model = svm.SVC() 
-# model.fit()
+# model.fit(features, lables)
 # print(model.score())
+
+# save model
+# joblib.dump(model, "model.pkl")
+
 
 
 
