@@ -102,7 +102,7 @@ def predict_features(data, fs, filter_params, band_ranges, select_channels, thre
 
 
 
-def process_data(queue_raw, queue_plot, fs, filter_params, band_ranges, select_channels, thresholds):
+def process_data(queue_raw, queue_plot, queue_action, fs, filter_params, band_ranges, select_channels, thresholds):
 
     while True:
         if not queue_raw.empty():
@@ -113,9 +113,10 @@ def process_data(queue_raw, queue_plot, fs, filter_params, band_ranges, select_c
             # 提交新任务到进程池
             result = predict_features(raw_data,fs, filter_params, band_ranges, select_channels, thresholds)
             print(f'features are {result[1]}')
-            print(f'acrions are {result[2]}')
+            print(f'actions are {result[2]}')
             print('ready to plot')
             queue_plot.put((raw_data,result[0]))
+            queue_action.put(result[2])
             # ax1.clear()
             # ax2.clear()
             # raw_curve = ax1.plot(range(128),raw_data[0,:])

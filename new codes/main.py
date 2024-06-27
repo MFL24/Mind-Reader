@@ -8,6 +8,7 @@ from scipy.signal import cheb2ord, cheby2, filtfilt
 from get_data import get_Data
 from process_data import process_data
 from plot_data import plot_data
+from maze_game import maze_game
 
 if __name__ == '__main__':
     # set filter parameters
@@ -37,16 +38,20 @@ if __name__ == '__main__':
     # create 2 queues for data transfer, queue is shared between processes.
     queue_raw = mp.Queue()
     queue_plot = mp.Queue()
+    queue_action = mp.Queue()
     
     # create 3 processes
     process_getData = mp.Process(target = get_Data, args=(queue_raw,))
-    process_processData = mp.Process(target = process_data, args=(queue_raw, queue_plot, fs, filter_params, band_ranges, channels, thresholds))
+    process_processData = mp.Process(target = process_data, args=(queue_raw, queue_plot, queue_action, fs, filter_params, band_ranges, channels, thresholds))
     process_plotData = mp.Process(target=plot_data,args=(queue_plot,))
+    process_mazeGame= mp.Process(target=maze_game,args=(queue_action,))
 
     process_getData.start()
     process_processData.start()
     process_plotData.start()
+    process_mazeGame.start()
     
     process_getData.join()
     process_processData.join()
     process_plotData.join()
+    process_mazeGame.join()
