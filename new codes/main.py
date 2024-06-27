@@ -16,16 +16,19 @@ if __name__ == '__main__':
     band_ranges = {
         'blink': (1, 13),
         # 'blink': (13, 30),
-        'chew': (1, 13),
-        # 'chew': (13, 30)
+        # 'chew': (1, 13),
+        'chew': (13, 30)
     }
     # filter_params = ([0.8, 27], [0.6, 28])  # 示例滤波器参数
     filter_params = ([0.8, 0.6], [27, 28])
     
     channels = {
-        'blink' : ('F3','F4'),
-        'chew' : ('T7','T8')
+        # 'blink' : ('F3','F4'),
+        # 'chew' : ('T7','T8')
+        'blink' : (0,1,2),
+        'chew' : (3,4)
     }
+    
     thresholds = {
         'blink' : 30,
         'chew' : 105

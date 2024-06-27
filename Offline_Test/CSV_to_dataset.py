@@ -49,7 +49,7 @@ def fft_single_channel(data, fs, band_ranges, channel_index=False):
         sig = data[channel_index,:]
     else:
         sig = data
-    L = len(sig)
+    L = len(sig)  # why 可以len(sig) sig不是numpy，需要.shape()吗？
     # 计算信号的FFT
     sig_fft = fft(sig)
     # 计算频率轴
@@ -64,8 +64,14 @@ def fft_single_channel(data, fs, band_ranges, channel_index=False):
     low = band_ranges[0]
     high = band_ranges[1]
     
-    # get power in the band
+    # get power in the band  sig_fft[band_mask] is a value
     band_mask = (freqs >= low) & (freqs <= high) # Bool type 
+    
+    # ！！！！！sig_fft[index_low:index_high] is a [13*1] vector, 保留更多信息
+    # index_low = np.argmin(np.abs(freqs - low)) # or direct use find() 
+    # index_high = np.argmin(np.abs(freqs - high)) # 鲁棒性更好，如果时间窗是3s，那么fft横轴freq间隔是1/3
+    # sig_fft[index_low:index_high]
+    
     return np.sum(sig_fft[band_mask])
 
 
