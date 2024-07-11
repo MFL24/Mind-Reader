@@ -77,40 +77,21 @@ def fft_single_channel(data, fs, band_ranges, channel_index=False):
     return np.sum(sig_fft[band_mask])
 
 
-
-# def band_feature_extraction(data, fs, band_ranges, select_channels):
-#     band_amplitudes = {}
-#     for band_name in band_ranges.keys():
-#         channels = select_channels[band_name]
-#         if band_name == 'chew':
-#             chew_feature = 0
-#             for ch in channels:
-#                 chew_feature = chew_feature + (fft_single_channel(data, fs, band_ranges[band_name], find_ch_index(ch)))
-#             band_amplitudes[band_name] = chew_feature/len(channels)
-#         elif band_name == 'blink':
-#             blink_feature = []
-#             for ch in channels:
-#                 blink_feature.append(fft_single_channel(data, fs, band_ranges[band_name], find_ch_index(ch)))
-#             band_amplitudes[band_name] = blink_feature    
-#         else:
-#             raise Exception('Action not found')     
-#     return band_amplitudes
-
 def window_feature_extraction(data, fs, band_ranges, select_channels):
     band_amplitudes = []
     for band_name in band_ranges.keys():
         channels = select_channels[band_name]
         if band_name == 'chew': # T7, T8 
             for ch in channels:
-                band_amplitudes.append(fft_single_channel(data[ch,:], fs, band_ranges[band_name]))
+                band_amplitudes.append(fft_single_channel(data[find_ch_index(ch),:], fs, band_ranges[band_name]))
         elif band_name == 'blink': # AF3, F3, F4
             for ch in channels:
-                band_amplitudes.append(fft_single_channel(data[ch,:], fs, band_ranges[band_name]))   
+                band_amplitudes.append(fft_single_channel(data[find_ch_index(ch),:], fs, band_ranges[band_name]))   
         else:
             raise Exception('Action not found')     
-    return band_amplitudes
+    return np.array(band_amplitudes)
 
-def predict_features(data, fs, filter_params, band_ranges, select_channels, thresholds):
+def predict_features(data, fs, filter_params, band_ranges, select_channels, model, mode='threshold'):
     # filtered_data = cheby2_bandpass_filter(data, fs, *filter_params)
 
     # filter
@@ -120,54 +101,74 @@ def predict_features(data, fs, filter_params, band_ranges, select_channels, thre
     filtered_data = cheby2_highpass_filter(filtered_data, fs, *highpass_filter_params)
     
     # feature extraction
-    window_feature = window_feature_extraction(filtered_data, fs, band_ranges,select_channels)
+    window_feature = window_feature_extraction(filtered_data, fs, band_ranges, select_channels)
+    window_feature = window_feature.reshape(1,-1)
     
-    # load model
-    loaded_model = joblib.load("model.pkl")
-    
-    # predict
-    action_predict = loaded_model.predict(window_feature)
-    
+    if mode == 'random':
+        action_predict = np.random.randint(0,4)
+    elif mode == 'svm':
+        # predict
+        action_predict = model.predict(window_feature)   
+        if np.mean(window_feature[0][3:]) > 200:
+            action_predict = 3
+    elif mode == 'threshold':
+        action_predict = 0
+        if window_feature[0][0] > 200:
+            action_predict = 2
+        elif window_feature[0][2] > 110:
+            action_predict = 1
+        if np.mean(window_feature[0][3:]) > 200:
+            action_predict = 3  
+    elif mode == 'mix':
+        action_predict = model.predict(window_feature) 
+        if window_feature[0][0] > 120:
+            action_predict = 2
+        if np.mean(window_feature[0][3:]) > 200:
+            action_predict = 3          
+        
     if action_predict == 0:
-        action = 'None' # classType: NoneType, not str.
+        action = 'Still' # classType: NoneType, not str.
     elif action_predict == 1:   
         action = 'Left'
     elif action_predict == 2:   
         action = 'Right'
     elif action_predict == 3:   
         action = 'Up'
-
-    # if features['blink'][0] > features['blink'][1] + thresholds['blink']:
-    #     action = 2
-    # elif features['blink'][1] > features['blink'][0] + thresholds['blink']:
-    #     action = 3
-        
-    # if features['chew'] > thresholds['chew']:
-    #     action = 1
         
     return (filtered_data,window_feature,action)
 
 
-
-def process_data(queue_raw, queue_plot, queue_action, fs, filter_params, band_ranges, select_channels, thresholds):
-
+def process_data(queue_raw, queue_plot, queue_action, fs, filter_params, band_ranges, select_channels, mode):
+    count = 0
+    CheckNumber = 3
+    # Initialize buffer list with fixed length 3
+    BufferCommand = [None]*CheckNumber
+    loaded_model = joblib.load("./NN_Model/SVM_Model_NoCHEWING.pkl")
     while True:
         if not queue_raw.empty():
             # 获取新的数据窗口
             raw_data_tuple = queue_raw.get()
-            raw_data = raw_data_tuple[1] # type:
+            raw_data = raw_data_tuple[1] # type
             raw_time = raw_data_tuple[0]
             # 提交新任务到进程池
-            result = predict_features(raw_data,fs, filter_params, band_ranges, select_channels, thresholds)
-            print(f'features are {result[1]}')
-            print(f'actions are {result[2]}')
-            print('ready to plot')
-            queue_plot.put((raw_data,result[0]))
-            queue_action.put(result[2])
-            # ax1.clear()
-            # ax2.clear()
-            # raw_curve = ax1.plot(range(128),raw_data[0,:])
-            # filter_curve = ax2.plot(range(128),result[0][0,:])
-            # plt.pause(0.5)
-            # plt.show()
+            result = predict_features(raw_data, fs, filter_params, band_ranges, select_channels, loaded_model, mode=mode)
+            position = count%CheckNumber
+            BufferCommand[position] = result[2]
+            queue_plot.put(result[0])
+            print(f'cycle: {count}')
+            if BufferCommand[0] == BufferCommand[1] and BufferCommand[0] == BufferCommand[2]:
+                print('Consistent')
+                queue_action.put(result[2])                
+            else:
+                print('Not consistent')
+                queue_action.put(0)
+            # print(f'features are {result[1]}')
+            print(f'actions are {BufferCommand[0]},{BufferCommand[1]},{BufferCommand[2]}')
+            print(f'features are: {result[1]}')
+            print('-'*10)
+            count += 1
+            # print(f'actions are {result[2]}')
+            # print('ready to plot')
+            
+
             

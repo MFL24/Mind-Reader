@@ -6,7 +6,7 @@ vec = pygame.math.Vector2
 
 
 class Player(pygame.sprite.Sprite):
-    SPEED = 0.5
+    SPEED = 50
     def __init__(self,size,position,screen,img_sc=False,color=(0,0,0)):
         '''
     
@@ -62,26 +62,24 @@ class Player(pygame.sprite.Sprite):
         else:
             raise Exception ('Unvalid data type')
         
-    def move(self):
+    def move(self,action):
         '''
         control the movement of the player
         
         '''
         movement = None
         self._vel = vec(0,0)
-        pressed_keys = pygame.key.get_pressed()
-        if pressed_keys[pygame.K_a]:
+        if action == 'Left':
             self._vel.x = -Player.SPEED
             movement = 'Left'
-        if pressed_keys[pygame.K_d]:
+        elif action == 'Right':
             self._vel.x = Player.SPEED
             movement = 'Right'
-        if pressed_keys[pygame.K_w]:
+        elif action == 'Up':
             self._vel.y = -Player.SPEED
             movement = 'Up'
-        if pressed_keys[pygame.K_s]:
-            self._vel.y = Player.SPEED 
-            movement = 'Down'       
+        else:
+            movement = 'Still'       
         
         self.SurfPosition += self._vel
         self.rect.topleft = self.SurfPosition
@@ -102,8 +100,8 @@ class Player(pygame.sprite.Sprite):
                 self.SurfPosition.x = hits[0].rect.left-self.size[1]-1
             elif movement == 'Up':
                 self.SurfPosition.y = hits[0].rect.bottom+1
-            elif movement == 'Down':
-                self.SurfPosition.y = hits[0].rect.top-self.size[0]-1
+            elif movement == 'Still':
+                pass
     
     def win(self,flag_group,win_imgsc):
         hits = pygame.sprite.spritecollide(self,flag_group,False)

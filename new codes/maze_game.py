@@ -4,8 +4,8 @@ import time
 from gadgets import Player,Wall,Flag
 import multiprocessing as mp
 
+
 def maze_game(queue_action):
-    # initalize
     pygame.init()
     vec = pygame.math.Vector2
 
@@ -35,31 +35,21 @@ def maze_game(queue_action):
     Gadgets.add(P1)
     Gadgets.add(F)
     Interactive.add(F)
-        
-        
-    # Main loop
-    running = True
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-        
         window.fill((255,255,255))
-
-        ## retrieve actions from queue_action, instead using P1.move() to retrieve keyboard action
-        # last_movement = P1.move() 
-        ## P1.move() retrieve the movement action from the player instance P1. checking keyboard inputs or processing commands from a queue
-        ## print(P1.move())# Right, Left, Up, Down,None
-        ## print(type(last_movement)) # str
-        
         if not queue_action.empty():
             action = queue_action.get()
             last_movement = P1.move(action) # Right, Left, Up, Down, None
+        else:
+            last_movement = P1.move('Still')
             
         P1.update(last_movement,Walls)
         P1.win(Interactive,'./Maze_Game/winning.png')
-        
         for entity in Gadgets:
-            window.blit(entity.surf, entity.rect)
-        
+                window.blit(entity.surf, entity.rect)
         pygame.display.update()
+

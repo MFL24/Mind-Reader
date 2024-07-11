@@ -7,7 +7,22 @@ import pandas as pd
 from scipy.fftpack import fft, fftfreq
 from sklearn import svm
 import joblib
+import torch
+from torch.utils.data import Dataset,DataLoader
 
+class EEG_Dataset(Dataset):
+    def __init__(self,data,labels) -> None:
+        super().__init__()
+        self.data = data
+        self.label = labels
+    def __len__(self):
+        return len(self.label)
+    
+    def __getitem__(self, index):
+        return self.data[index,:],self.label[index]
+    
+
+        
 def cheby2_lowpass_filter(data, fs, wp, ws, gpass=3, gstop=40, rs=60, btype='lowpass'):
     wp = wp / (fs / 2)
     ws = ws / (fs / 2)
@@ -67,13 +82,13 @@ def fft_single_channel(data, fs, band_ranges, channel_index=False):
     # get power in the band  sig_fft[band_mask] is a value
     band_mask = (freqs >= low) & (freqs <= high) # Bool type 
     
-    # ！！！！！sig_fft[index_low:index_high] is a [13*1] vector, 保留更多信息
+    #sig_fft[index_low:index_high] is a [13*1] vector, 保留更多信息
     # index_low = np.argmin(np.abs(freqs - low)) # or direct use find() 
     # index_high = np.argmin(np.abs(freqs - high)) # 鲁棒性更好，如果时间窗是3s，那么fft横轴freq间隔是1/3
     # sig_fft[index_low:index_high]
     
     return np.sum(sig_fft[band_mask])
-
+    # return sig_fft[1:30]
 
 def band_feature_extraction(data, fs, band_ranges, select_channels):
     band_amplitudes = []
@@ -90,19 +105,20 @@ def band_feature_extraction(data, fs, band_ranges, select_channels):
     return band_amplitudes
 
 
-def CSV_to_Dataset(path,event_id):
-    data = pd.read_csv(path,sep=';')
+def CSV_to_Dataset(path,event_id,ERP=False):
+    data = pd.read_csv(path,sep=',')
     
     epoch_number = data['Epoch']
     epoch_number = epoch_number.to_numpy()
 
     fs = 128
 
-    sig = data[data.keys()[2::]]
+    sig = data[data.keys()[2:15]]
     sig = sig.to_numpy().T
 
     ch_index = []
     channels = ['F4','F3','AF3','T7','T8']
+    # channels = ['F4','AF3','T7','T8']
     for ch in channels:
         ch_index.append(find_ch_index(ch))
         
@@ -110,6 +126,7 @@ def CSV_to_Dataset(path,event_id):
 
 
     lowpass_filter_params = [27,28]
+    # lowpass_filter_params = [6,8]
     highpass_filter_params = [0.8,0.6]
     
     filtered_epoch = []
@@ -122,43 +139,111 @@ def CSV_to_Dataset(path,event_id):
         'blink' : (0,1,2),
         'chew' : (3,4)
     }
+    # _channels = {
+    #     'blink' : (0,1),
+    #     'chew' : (2,3)
+    # }
 
     band_ranges = {
-        'blink': (1, 13),
-        # 'blink': (13, 30),
+        'blink': (1, 4),
+        # 'blink': (1, 4),
         # 'chew': (1, 13),
         'chew': (13, 30)
     }
 
-    feature_matrix = np.zeros((len(filtered_epoch),5))
+    feature_matrix = np.zeros((len(filtered_epoch),len(channels)))
     for i in range(len(filtered_epoch)):
         feature_matrix[i,:] = (band_feature_extraction(filtered_epoch[i],fs,band_ranges,_channels))
         
     label_vector = np.ones((len(filtered_epoch),1))*event_id
+    
+    if ERP:
+        for count,i in enumerate(filtered_epoch):
+            if count == 0:
+                ERP_mean = i
+            else:
+                ERP_mean += i
+        ERP_mean = ERP_mean/(count+1)
+        
+        return (feature_matrix,label_vector,ERP_mean)
+    else:
+        return (feature_matrix,label_vector)
+        
 
-    return (feature_matrix,label_vector)
 
 
-# print(CSV_to_Dataset('./Offline_Test/RightEyeBlink3.csv',2)[0])
 
-feature_LeftEyeBlink, label_LeftEyeBlink = CSV_to_Dataset('./Offline_Test/LeftEyeBlink.csv', 1)
-feature_RightEyeBlink, label_RightEyeBlink = CSV_to_Dataset('./Offline_Test/RightEyeBlink.csv', 2)
-feature_Chew, label_Chew = CSV_to_Dataset('./Offline_Test/Chewing.csv', 3)
+feature_LeftEyeBlink1, label_LeftEyeBlink1 = CSV_to_Dataset('./DATA/LeftEyeBlink4', 1)
+# feature_LeftEyeBlink2, label_LeftEyeBlink2 = CSV_to_Dataset('./DATA/LeftEyeBlink2', 1)
+# feature_LeftEyeBlink3, label_LeftEyeBlink3 = CSV_to_Dataset('./DATA/LeftEyeBlink3', 1)
+
+feature_RightEyeBlink1, label_RightEyeBlink1 = CSV_to_Dataset('./DATA/RightEyeBlink6', 2)
+# feature_RightEyeBlink2, label_RightEyeBlink2 = CSV_to_Dataset('./DATA/RightEyeBlink7', 2)
+
+# feature_Chewing1, label_Chewing1 = CSV_to_Dataset('./DATA/Chewing2', 3)
+# feature_Chewing2, label_Chewing2 = CSV_to_Dataset('./DATA/Chewing3', 3)
+
+feature_Rest1, label_Rest1 = CSV_to_Dataset('./DATA/Rest2', 0)
+# feature_Rest2, label_Rest2 = CSV_to_Dataset('./DATA/Rest3', 0)
+
 # print("Shape of feature_LeftEyeBlink:", feature_LeftEyeBlink.shape)
 # print("Shape of feature_RightEyeBlink:", feature_RightEyeBlink.shape)
 # print("Shape of feature_Chew:", feature_Chew.shape)
 
-features = np.concatenate((feature_LeftEyeBlink, feature_RightEyeBlink, feature_Chew), axis=0)
-# print(features.shape)
-lables = np.concatenate((label_LeftEyeBlink, label_RightEyeBlink, label_Chew), axis = 0)
-# print(lables.shape)
+features = np.concatenate((feature_Rest1, feature_LeftEyeBlink1,
+                        feature_RightEyeBlink1), axis=0)
+labels = np.concatenate((label_Rest1,label_LeftEyeBlink1,
+                        label_RightEyeBlink1), axis=0)
 
-# model = svm.SVC() 
-# model.fit(features, lables)
-# print(model.score())
+# features = np.concatenate((feature_Rest1, feature_Rest2, feature_LeftEyeBlink1, feature_LeftEyeBlink2,
+#                            feature_LeftEyeBlink3, feature_RightEyeBlink1, feature_RightEyeBlink2, feature_Chewing1, feature_Chewing2), axis=0)
+# labels = np.concatenate((label_Rest1, label_Rest2, label_LeftEyeBlink1, label_LeftEyeBlink2,
+#                            label_LeftEyeBlink3, label_RightEyeBlink1, label_RightEyeBlink2, label_Chewing1, label_Chewing2), axis=0)
+
+# dataset = EEG_Dataset(features,labels)
+
+# train_dataloader = DataLoader(dataset, batch_size=30, shuffle=True)
+
+
+# count = 1
+# model = svm.SVC(kernel='rbf') 
+# for train_feature, train_label in train_dataloader:
+#     model.fit(train_feature, train_label)
+#     print(model.score(train_feature,train_label))
+#     count += 1
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import ConfusionMatrixDisplay
+
+X_train, X_test, y_train, y_test = train_test_split(features,labels, test_size = 0.2, random_state = 0)
+
+# instantiate classifier with default hyperparameters
+svc=SVC() 
+
+
+# fit classifier to training set
+model = svc.fit(X_train,y_train)
+
+disp = ConfusionMatrixDisplay.from_estimator(
+model,
+X_test,
+y_test,
+#display_labels=class_names,
+cmap=plt.cm.Blues,
+normalize='true',
+)
+
+
+
+plt.show()
+
 
 # save model
-# joblib.dump(model, "model.pkl")
+joblib.dump(model, "./NN_Model/SVM_Model_NoCHEWING.pkl")
 
 
 
@@ -197,16 +282,5 @@ lables = np.concatenate((label_LeftEyeBlink, label_RightEyeBlink, label_Chew), a
 
 
 
-
-
-
-
-
-
-# fig = plt.figure()
-# ax = fig.add_subplot()
-# ax.set_axis_off()
-# ax.plot(filtered_data[0,:])
-# plt.show()
 
 
