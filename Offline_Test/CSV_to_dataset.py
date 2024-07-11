@@ -117,8 +117,8 @@ def CSV_to_Dataset(path,event_id,ERP=False):
     sig = sig.to_numpy().T
 
     ch_index = []
-    channels = ['F4','F3','AF3','T7','T8']
-    # channels = ['F4','AF3','T7','T8']
+    # channels = ['F4','F3','AF3','T7','T8']
+    channels = ['F4','AF3','T7','T8']
     for ch in channels:
         ch_index.append(find_ch_index(ch))
         
@@ -135,20 +135,20 @@ def CSV_to_Dataset(path,event_id,ERP=False):
         filtered_data = cheby2_highpass_filter(filtered_data, fs, *highpass_filter_params)
         filtered_epoch.append(filtered_data)
 
-    _channels = {
-        'blink' : (0,1,2),
-        'chew' : (3,4)
-    }
     # _channels = {
-    #     'blink' : (0,1),
-    #     'chew' : (2,3)
+    #     'blink' : (0,1,2),
+    #     'chew' : (3,4)
     # }
+    _channels = {
+        'blink' : (0,1),
+        'chew' : (2,3)
+    }
 
     band_ranges = {
         'blink': (1, 4),
-        # 'blink': (1, 4),
-        # 'chew': (1, 13),
-        'chew': (13, 30)
+        # 'blink': (1, 13),
+        'chew': (1, 4),
+        # 'chew': (13, 30)
     }
 
     feature_matrix = np.zeros((len(filtered_epoch),len(channels)))
@@ -158,14 +158,11 @@ def CSV_to_Dataset(path,event_id,ERP=False):
     label_vector = np.ones((len(filtered_epoch),1))*event_id
     
     if ERP:
-        for count,i in enumerate(filtered_epoch):
-            if count == 0:
-                ERP_mean = i
-            else:
-                ERP_mean += i
-        ERP_mean = ERP_mean/(count+1)
-        
-        return (feature_matrix,label_vector,ERP_mean)
+        filtered_epoch = np.array(filtered_epoch)
+        ERP_mean = np.mean(filtered_epoch,axis=0)
+        ERP_var = np.std(filtered_epoch,axis=0)
+        t = np.arange(ERP_mean.shape[1])/fs
+        return (feature_matrix,label_vector,ERP_mean,ERP_var,t)
     else:
         return (feature_matrix,label_vector)
         
