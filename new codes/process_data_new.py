@@ -9,6 +9,7 @@ import pandas as pd
 from scipy.fftpack import fft, fftfreq
 from sklearn import svm
 import joblib
+import time
 
 def cheby2_lowpass_filter(data, fs, wp, ws, gpass=3, gstop=40, rs=60, btype='lowpass'):
     wp = wp / (fs / 2)
@@ -113,11 +114,11 @@ def predict_features(data, fs, filter_params, band_ranges, select_channels, mode
             action_predict = 3
     elif mode == 'threshold':
         action_predict = 0
-        if window_feature[0][0] > 200:
+        if window_feature[0][0] > 25:
             action_predict = 2
-        elif window_feature[0][2] > 110:
+        elif window_feature[0][1] > 150:
             action_predict = 1
-        if np.mean(window_feature[0][3:]) > 200:
+        if np.max(window_feature[0][2:]) > 200:
             action_predict = 3  
     elif mode == 'mix':
         action_predict = model.predict(window_feature) 
@@ -134,6 +135,9 @@ def predict_features(data, fs, filter_params, band_ranges, select_channels, mode
         action = 'Right'
     elif action_predict == 3:   
         action = 'Up'
+    
+    # window_feature = [window_feature[0][0],window_feature[0][2]-window_feature[0][1],
+    #                 window_feature[0][3],window_feature[0][4]]
         
     return (filtered_data,window_feature,action)
 
@@ -142,6 +146,7 @@ def process_data(queue_raw, queue_plot, queue_action, fs, filter_params, band_ra
     count = 0
     CheckNumber = 3
     # Initialize buffer list with fixed length 3
+    AccuracyTest = []
     BufferCommand = [None]*CheckNumber
     loaded_model = joblib.load("./NN_Model/SVM_Model_NoCHEWING.pkl")
     while True:
@@ -152,6 +157,7 @@ def process_data(queue_raw, queue_plot, queue_action, fs, filter_params, band_ra
             raw_time = raw_data_tuple[0]
             # 提交新任务到进程池
             result = predict_features(raw_data, fs, filter_params, band_ranges, select_channels, loaded_model, mode=mode)
+            AccuracyTest.append(result[2])
             position = count%CheckNumber
             BufferCommand[position] = result[2]
             queue_plot.put(result[0])
@@ -165,7 +171,10 @@ def process_data(queue_raw, queue_plot, queue_action, fs, filter_params, band_ra
             # print(f'features are {result[1]}')
             print(f'actions are {BufferCommand[0]},{BufferCommand[1]},{BufferCommand[2]}')
             print(f'features are: {result[1]}')
+            # print(f'Accuracy test was {AccuracyTest}')
+
             print('-'*10)
+            
             count += 1
             # print(f'actions are {result[2]}')
             # print('ready to plot')

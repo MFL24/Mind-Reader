@@ -32,13 +32,14 @@ if __name__ == '__main__':
     #     'chew' : (3,4)
     # }
     channels = {
-        'blink' : ('F4','F3','AF3'),
+        'blink' : ('F4','AF3'),
+        # 'blink' : ('AF3','T7','T8'),
         'chew' : ('T7','T8')
     }
 
     
     thresholds = {
-        'blink' : 30,
+        'blink' : 50,
         'chew' : 105
     }
 

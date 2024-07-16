@@ -141,12 +141,13 @@ def CSV_to_Dataset(path,event_id,ERP=False):
     # }
     _channels = {
         'blink' : (0,1),
+        # 'blink' : (1,2,3),
         'chew' : (2,3)
     }
 
     band_ranges = {
         'blink': (1, 4),
-        # 'blink': (1, 13),
+        # 'blink': (13, 39),
         'chew': (1, 4),
         # 'chew': (13, 30)
     }
@@ -178,7 +179,7 @@ feature_RightEyeBlink1, label_RightEyeBlink1 = CSV_to_Dataset('./DATA/RightEyeBl
 # feature_RightEyeBlink2, label_RightEyeBlink2 = CSV_to_Dataset('./DATA/RightEyeBlink7', 2)
 
 # feature_Chewing1, label_Chewing1 = CSV_to_Dataset('./DATA/Chewing2', 3)
-# feature_Chewing2, label_Chewing2 = CSV_to_Dataset('./DATA/Chewing3', 3)
+# feature_Chewing1, label_Chewing1 = CSV_to_Dataset('./DATA/Chewing3', 3)
 
 feature_Rest1, label_Rest1 = CSV_to_Dataset('./DATA/Rest2', 0)
 # feature_Rest2, label_Rest2 = CSV_to_Dataset('./DATA/Rest3', 0)
@@ -192,6 +193,7 @@ features = np.concatenate((feature_Rest1, feature_LeftEyeBlink1,
 labels = np.concatenate((label_Rest1,label_LeftEyeBlink1,
                         label_RightEyeBlink1), axis=0)
 
+
 # features = np.concatenate((feature_Rest1, feature_Rest2, feature_LeftEyeBlink1, feature_LeftEyeBlink2,
 #                            feature_LeftEyeBlink3, feature_RightEyeBlink1, feature_RightEyeBlink2, feature_Chewing1, feature_Chewing2), axis=0)
 # labels = np.concatenate((label_Rest1, label_Rest2, label_LeftEyeBlink1, label_LeftEyeBlink2,
@@ -199,7 +201,7 @@ labels = np.concatenate((label_Rest1,label_LeftEyeBlink1,
 
 # dataset = EEG_Dataset(features,labels)
 
-# train_dataloader = DataLoader(dataset, batch_size=30, shuffle=True)
+# train_dataloader = DataLoader(dataset, batch_size=20, shuffle=True)
 
 
 # count = 1
@@ -209,8 +211,14 @@ labels = np.concatenate((label_Rest1,label_LeftEyeBlink1,
 #     print(model.score(train_feature,train_label))
 #     count += 1
 
+# from sklearn.model_selection import cross_val_score,ShuffleSplit
+# cv = ShuffleSplit(n_splits=5, test_size=0.3, random_state=0)
+# clf = svm.SVC(kernel='rbf')
+# scores = cross_val_score(clf, features, labels, cv=cv)
+# print(scores)
 
 
+'''
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
@@ -229,7 +237,7 @@ disp = ConfusionMatrixDisplay.from_estimator(
 model,
 X_test,
 y_test,
-#display_labels=class_names,
+display_labels=['Rest','LeftEye','RightEye'],
 cmap=plt.cm.Blues,
 normalize='true',
 )
@@ -239,8 +247,11 @@ normalize='true',
 plt.show()
 
 
+'''
+
+
 # save model
-joblib.dump(model, "./NN_Model/SVM_Model_NoCHEWING.pkl")
+# joblib.dump(model, "./NN_Model/SVM_Model_NoCHEWING.pkl")
 
 
 
